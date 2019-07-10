@@ -1,6 +1,8 @@
 https://www.learningjournal.guru/courses/spark/spark-foundation-training/file-based-data-sources/
 
 https://docs.databricks.com/spark/latest/spark-sql/index.html
+http://allaboutscala.com/big-data/spark/
+https://sparkbyexamples.com/rename-a-column-on-spark-dataframes/
 
 https://www.youtube.com/watch?v=Fsl6odyw2cU
 https://www.youtube.com/watch?v=5XPjrz-LHew
@@ -9,7 +11,6 @@ https://www.youtube.com/watch?v=aO0l0KpYnes
 https://www.youtube.com/watch?v=WS1JAcdTntg
 https://www.youtube.com/watch?v=aO0l0KpYnes&list=PLqXydJzDNxiKuTZOsmsAfDsktSj69GgUa
 https://www.youtube.com/watch?v=1aCpLUFTja0
-https://sparkbyexamples.com/rename-a-column-on-spark-dataframes/
 https://www.youtube.com/watch?v=_1byVWTEK1s
 
 
