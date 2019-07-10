@@ -1,0 +1,62 @@
+
+scala> case class HECourse(id:Int,name:String,fee:Int,venue:String,duration:Int)
+defined class HECourse
+
+scala> val courseRDD=sc.parallelize(Seq(HECourse(101,"Hadoop",2000,"Mumbai",4),HECourse(102,"Spark",4000,"Pune",6),HECourse(103,"Python",1000,"Banglore",2)))
+courseRDD: org.apache.spark.rdd.RDD[HECourse] = ParallelCollectionRDD[40] at parallelize at <console>:26
+
+
+scala> courseRDD
+res34: org.apache.spark.rdd.RDD[HECourse] = ParallelCollectionRDD[40] at parallelize at <console>:26
+
+scala> val ds=courseRDD.toDS
+ds: org.apache.spark.sql.Dataset[HECourse] = [id: int, name: string ... 3 more fields]
+
+scala> courseRDD.collect
+res35: Array[HECourse] = Array(HECourse(101,Hadoop,2000,Mumbai,4), HECourse(102,Spark,4000,Pune,6), HECourse(103,Python,1000,Banglore,2))
+
+scala> ds.collect
+res36: Array[HECourse] = Array(HECourse(101,Hadoop,2000,Mumbai,4), HECourse(102,Spark,4000,Pune,6), HECourse(103,Python,1000,Banglore,2))
+
+scala> ds.where("fee>1500")
+res37: org.apache.spark.sql.Dataset[HECourse] = [id: int, name: string ... 3 more fields]
+
+scala> ds.where("fee>1500").collect
+res38: Array[HECourse] = Array(HECourse(101,Hadoop,2000,Mumbai,4), HECourse(102,Spark,4000,Pune,6))
+
+scala> ds.where("fee>1500").select("name")
+res39: org.apache.spark.sql.DataFrame = [name: string]
+
+scala> ds.where("fee>1500").select("name").show
++------+
+|  name|
++------+
+|Hadoop|
+| Spark|
++------+
+
+
+scala> ds.where("fee>1500").where("venue=='Mumbai'").select("name").show
++------+
+|  name|
++------+
+|Hadoop|
++------+
+
+
+scala> ds.createOrReplaceTempView("Courses")
+
+scala> val data=sql("select * from Courses")
+19/07/08 10:56:40 WARN ObjectStore: Failed to get database global_temp, returning NoSuchObjectException
+data: org.apache.spark.sql.DataFrame = [id: int, name: string ... 3 more fields]
+
+scala> val data=sql("select * from Courses").show
++---+------+----+--------+--------+
+| id|  name| fee|   venue|duration|
++---+------+----+--------+--------+
+|101|Hadoop|2000|  Mumbai|       4|
+|102| Spark|4000|    Pune|       6|
+|103|Python|1000|Banglore|       2|
++---+------+----+--------+--------+
+
+data: Unit = ()

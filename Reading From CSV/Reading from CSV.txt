@@ -1,0 +1,72 @@
+
+scala> val df=spark.read.format("csv").option("header", "true").load("C:/Users/sashetye/demo/Employee_CSV_Dataframe.csv")
+df: org.apache.spark.sql.DataFrame = [FirstName: string, LastName: string ... 2 more fields]
+
+scala> val empSchema=List(StructField("FirstName",StringType,true),StructField("LastName",StringType,true),StructField("Mail",StringType,true),StructField("Salary",IntegerType,true))
+empSchema: List[org.apache.spark.sql.types.StructField] = List(StructField(FirstName,StringType,true), StructField(LastName,StringType,true), StructField(Mail,StringType,true), StructField(Salary,IntegerType,true))
+
+scala> df.printSchema
+root
+ |-- FirstName: string (nullable = true)
+ |-- LastName: string (nullable = true)
+ |-- Mail: string (nullable = true)
+ |-- Salary: string (nullable = true)
+
+
+scala> df.show
++---------+--------+---------------+------+
+|FirstName|LastName|           Mail|Salary|
++---------+--------+---------------+------+
+|     John|  Robert| john@gmail.com| 12000|
+|     Alex|  Milers| alex@yahoo.com|  5000|
+|    Seema|     Roy|seema@gmail.com| 45000|
+|    Pooja|   Singh|pooja@yahoo.com|  8000|
++---------+--------+---------------+------+
+
+
+scala> df.count
+res3: Long = 4
+
+
+scala> df.createOrReplaceTempView("Employee")
+
+scala> val result=spark.sql("select FirstName ,count(distinct(' ')) from Employee group by FirstName").show
++---------+-----------------+
+|FirstName|count(DISTINCT  )|
++---------+-----------------+
+|     Alex|                1|
+|    Seema|                1|
+|     John|                1|
+|    Pooja|                1|
++---------+-----------------+
+
+result: Unit = ()
+
+
+scala> df.select("FirstName","Salary").filter("Salary==5000").show
++---------+------+
+|FirstName|Salary|
++---------+------+
+|     Alex|  5000|
++---------+------+
+
+scala> df.select("FirstName","LastName","Salary").orderBy(desc("FirstName")).show
++---------+--------+------+
+|FirstName|LastName|Salary|
++---------+--------+------+
+|    Seema|     Roy| 45000|
+|    Pooja|   Singh|  8000|
+|     John|  Robert| 12000|
+|     Alex|  Milers|  5000|
++---------+--------+------+
+
+
+scala> df.select("FirstName","LastName","Salary").orderBy(desc("LastName")).show
++---------+--------+------+
+|FirstName|LastName|Salary|
++---------+--------+------+
+|    Pooja|   Singh|  8000|
+|    Seema|     Roy| 45000|
+|     John|  Robert| 12000|
+|     Alex|  Milers|  5000|
++---------+--------+------+

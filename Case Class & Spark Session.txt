@@ -1,0 +1,146 @@
+
+scala> import org.apache.spark.sql.Row
+import org.apache.spark.sql.Row
+
+scala> import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.SparkSession
+
+scala> case class record(key:Int,value:String)
+defined class record
+
+scala> val warehouseLocation="spark-warehouse"
+warehouseLocation: String = spark-warehouse
+
+scala> val spark=SparkSession.builder().appName("MyDemo").config("spark.sql.warehouse.dir",warehouseLocation).
+appName   config   enableHiveSupport   getOrCreate   master   withExtensions
+
+scala> val spark=SparkSession.builder().appName("MyDemo").config("spark.sql.warehouse.dir",warehouseLocation).enableHiveSupport().getOrCreate()
+19/07/09 15:09:46 WARN SparkSession$Builder: Using an existing SparkSession; some configuration may not take effect.
+spark: org.apache.spark.sql.SparkSession = org.apache.spark.sql.SparkSession@7939a6da
+
+scala> import spark.implicits._
+import spark.implicits._
+
+scala> import spark.sql
+import spark.sql
+
+
+scala> sql("create table if not exists src(key INT,value STRING)")
+19/07/09 15:12:17 WARN HiveMetaStore: Location: file:/C:/Users/sashetye/spark-warehouse/src specified for non-external table:src
+-chgrp: 'CORP\Domain Users' does not match expected pattern for group
+Usage: hadoop fs [generic options] -chgrp [-R] GROUP PATH...
+res55: org.apache.spark.sql.DataFrame = []
+
+
+scala> sql("select count(*) from src").show
++--------+
+|count(1)|
++--------+
+|       0|
++--------+
+
+
+scala> val sqlDF=sql("select key,value from src where key<10 order by key")
+sqlDF: org.apache.spark.sql.DataFrame = [key: int, value: string]
+
+scala> sqlDF.show
++---+-----+
+|key|value|
++---+-----+
++---+-----+
+
+
+scala> val stringDS=sqlDF.map{case Row(key:Int,value:String) =>s"key:$key,value:$value"}
+stringDS: org.apache.spark.sql.Dataset[String] = [value: string]
+
+scala> stringDS.show
++-----+
+|value|
++-----+
++-----+
+
+
+scala> val records=spark.createDataFrame((1 to 100).map(i =>record(i,s"val_$i")))
+records: org.apache.spark.sql.DataFrame = [key: int, value: string]
+
+
+scala> records.createOrReplaceTempView("myrecords")
+
+
+scala> val info=sql("select * from myrecords")
+info: org.apache.spark.sql.DataFrame = [key: int, value: string]
+
+scala> info.show
++---+------+
+|key| value|
++---+------+
+|  1| val_1|
+|  2| val_2|
+|  3| val_3|
+|  4| val_4|
+|  5| val_5|
+|  6| val_6|
+|  7| val_7|
+|  8| val_8|
+|  9| val_9|
+| 10|val_10|
+| 11|val_11|
+| 12|val_12|
+| 13|val_13|
+| 14|val_14|
+| 15|val_15|
+| 16|val_16|
+| 17|val_17|
+| 18|val_18|
+| 19|val_19|
+| 20|val_20|
++---+------+
+only showing top 20 rows
+
+
+scala> info.take(36).foreach(println)
+[1,val_1]
+[2,val_2]
+[3,val_3]
+[4,val_4]
+[5,val_5]
+[6,val_6]
+[7,val_7]
+[8,val_8]
+[9,val_9]
+[10,val_10]
+[11,val_11]
+[12,val_12]
+[13,val_13]
+[14,val_14]
+[15,val_15]
+[16,val_16]
+[17,val_17]
+[18,val_18]
+[19,val_19]
+[20,val_20]
+[21,val_21]
+[22,val_22]
+[23,val_23]
+[24,val_24]
+[25,val_25]
+[26,val_26]
+[27,val_27]
+[28,val_28]
+[29,val_29]
+[30,val_30]
+[31,val_31]
+[32,val_32]
+[33,val_33]
+[34,val_34]
+[35,val_35]
+[36,val_36]
+
+
+scala> val info=sql("select * from myrecords r join src s on r.key=s.key").show
++---+-----+---+-----+
+|key|value|key|value|
++---+-----+---+-----+
++---+-----+---+-----+
+
+info: Unit = ()

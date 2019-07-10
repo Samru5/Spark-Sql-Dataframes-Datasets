@@ -1,0 +1,75 @@
+scala> import org.apache.spark.sql.types._
+import org.apache.spark.sql.types._
+
+scala> import org.apache.spark.sql.Row
+import org.apache.spark.sql.Row
+
+scala> val empRDD=spark.sparkContext.textFile("C:/Users/sashetye/demo/Employee.csv")
+empRDD: org.apache.spark.rdd.RDD[String] = C:/Users/sashetye/demo/Employee.csv MapPartitionsRDD[63] at textFile at <console>:42
+
+
+scala> val schemaString="Year FirstName Country Gender"
+schemaString: String = Year FirstName Country Gender
+
+scala>  val fields=schemaString.split(" ").map(fieldName =>StructField(fieldName,StringType,nullable=true))
+fields: Array[org.apache.spark.sql.types.StructField] = Array(StructField(Year,StringType,true), StructField(FirstName,StringType,true), StructField(Country,StringType,true), StructField(Gender,StringType,true))
+
+scala>  val schema=StructType(fields)
+schema: org.apache.spark.sql.types.StructType = StructType(StructField(Year,StringType,true), StructField(FirstName,StringType,true), StructField(Country,StringType,true), StructField(Gender,StringType,true))
+
+scala> val rowRDD=empRDD.map(_.split(",")).map(attributes =>Row(attributes(0),attributes(1),attributes(2),attributes(3)))
+rowRDD: org.apache.spark.rdd.RDD[org.apache.spark.sql.Row] = MapPartitionsRDD[76] at map at <console>:48
+
+scala>  val empDF=spark.createDataFrame(rowRDD,schema)
+empDF: org.apache.spark.sql.DataFrame = [Year: string, FirstName: string ... 2 more fields]
+
+scala>  empDF.createOrReplaceTempView("Emp_Table")
+
+scala> val results=spark.sql("select * from Emp_Table")
+results: org.apache.spark.sql.DataFrame = [Year: string, FirstName: string ... 2 more fields]
+
+scala> results.show
++----+---------+-------+------+
+|Year|FirstName|Country|Gender|
++----+---------+-------+------+
+|Year|FirstName|Country|Gender|
+|2016|     John|    Ind|     M|
+|2018|     Alex|    Aus|     M|
+|2019|    Meena|America|     F|
+|2017|      Sam| Africa|     M|
+|2014|     Alex|  Japan|     M|
++----+---------+-------+------+
+
+
+scala> val results=spark.sql("select FirstName from Emp_Table")
+results: org.apache.spark.sql.DataFrame = [FirstName: string]
+
+scala> results.show
++---------+
+|FirstName|
++---------+
+|FirstName|
+|     John|
+|     Alex|
+|    Meena|
+|      Sam|
+|     Alex|
++---------+
+
+
+scala> val header=results.first
+header: org.apache.spark.sql.Row = [Year,FirstName,Country,Gender]
+
+scala> val rows=results.filter(line =>line!=header)
+rows: org.apache.spark.sql.Dataset[org.apache.spark.sql.Row] = [Year: string, FirstName: string ... 2 more fields]
+
+scala> rows.show
++----+---------+-------+------+
+|Year|FirstName|Country|Gender|
++----+---------+-------+------+
+|2016|     John|    Ind|     M|
+|2018|     Alex|    Aus|     M|
+|2019|    Meena|America|     F|
+|2017|      Sam| Africa|     M|
+|2014|     Alex|  Japan|     M|
++----+---------+-------+------+

@@ -1,0 +1,53 @@
+
+scala> import org.apache.spark.sql.types._
+import org.apache.spark.sql.types._
+
+scala> import org.apache.spark.storage.StorageLevel
+import org.apache.spark.storage.StorageLevel
+
+scala> import scala.io.Source
+import scala.io.Source
+
+scala> import scala.collection.mutable._
+import scala.collection.mutable._
+
+scala> import java.io.File
+import java.io.File
+
+scala> import org.apache.spark.sql._
+import org.apache.spark.sql._
+
+scala> import org.apache.spark.util._
+import org.apache.spark.util._
+
+scala> val employee=Seq(Row("John","Robert","john@gmail.com",12000),Row("Alex","Milers","alex@yahoo.com",5000),Row("Seema","Roy","seema@gmail.com",45000))
+employee: scala.collection.mutable.Seq[org.apache.spark.sql.Row] = ArrayBuffer([John,Robert,john@gmail.com,12000], [Alex,Milers,alex@yahoo.com,5000], [Seema,Roy,seema@gmail.com,45000])
+                                                                                                                                                                    ^
+
+scala> val empSchema=List(StructField("FirstName",StringType,true),StructField("LastName",StringType,true),StructField("Mail",StringType,true),StructField("Salary",IntegerType,true))
+empSchema: List[org.apache.spark.sql.types.StructField] = List(StructField(FirstName,StringType,true), StructField(LastName,StringType,true), StructField(Mail,StringType,true), StructField(Salary,IntegerType,true))
+
+scala> val empDf=spark.createDataFrame(spark.sparkContext.parallelize(employee),StructType(empSchema))
+empDf: org.apache.spark.sql.DataFrame = [FirstName: string, LastName: string ... 2 more fields]
+
+scala> empDf.show
++---------+--------+---------------+------+
+|FirstName|LastName|           Mail|Salary|
++---------+--------+---------------+------+
+|     John|  Robert| john@gmail.com| 12000|
+|     Alex|  Milers| alex@yahoo.com|  5000|
+|    Seema|     Roy|seema@gmail.com| 45000|
++---------+--------+---------------+------+
+
+
+
+
+
+
+
+
+
+
+
+
+

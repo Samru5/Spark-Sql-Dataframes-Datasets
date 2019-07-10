@@ -1,0 +1,184 @@
+How to convert RDD into dataframe-
+
+a]Inferring schema using reflection-
+
+scala> case class Person(name:String,age:String)
+defined class Person
+
+scala> val txtRDD=sc.textFile("C:/Users/sashetye/demo/Person.txt")
+txtRDD: org.apache.spark.rdd.RDD[String] = C:/Users/sashetye/demo/Person.txt MapPartitionsRDD[14] at textFile at <console>:27
+
+scala> val arrayRDD=txtRDD.map(_.split(","))
+arrayRDD: org.apache.spark.rdd.RDD[Array[String]] = MapPartitionsRDD[15] at map at <console>:28
+
+scala> val personRDD=arrayRDD.map(attributes => Person(attributes(0),attributes(1)))
+personRDD: org.apache.spark.rdd.RDD[Person] = MapPartitionsRDD[16] at map at <console>:30
+
+scala> val df=personRDD.toDF()
+df: org.apache.spark.sql.DataFrame = [name: string, age: string]
+
+scala> df.show()
++------+---+
+|  name|age|
++------+---+
+|  Name|Age|
+|Manish| 45|
+| Jyoti| 23|
+|  Alex| 50|
+|  John| 24|
++------+---+
+
+
+scala> txtRDD.take(1)
+res3: Array[String] = Array(Name,Age)
+
+scala> txtRDD.take(2)
+res4: Array[String] = Array(Name,Age, Manish,45)
+
+scala> txtRDD.take(2)(0)
+res5: String = Name,Age
+
+scala> txtRDD.take(2)(1)
+res6: String = Manish,45
+
+scala> df.createOrReplaceTempView("Person_View")
+
+
+scala> val teenAgers=spark.sql("select name,age from Person_View where age between 20 And 30")
+19/07/01 18:00:35 WARN ObjectStore: Failed to get database global_temp, returning NoSuchObjectException
+teenAgers: org.apache.spark.sql.DataFrame = [name: string, age: string]
+
+scala> teenAgers.show
++-----+---+
+| name|age|
++-----+---+
+|Jyoti| 23|
+| John| 24|
++-----+---+
+
+
+scala> teenAgers.map(teenAge => "Name:"+teenAge(0)).show()
++----------+
+|     value|
++----------+
+|Name:Jyoti|
+| Name:John|
++----------+
+
+
+scala> teenAgers.map(teenAge => "Age is:"+teenAge(1)).show()
++---------+
+|    value|
++---------+
+|Age is:23|
+|Age is:24|
++---------+
+
+
+scala> teenAgers.map(teenAge => "Name:"+teenAge.getAs[String]("name")).show()
++----------+
+|     value|
++----------+
+|Name:Jyoti|
+| Name:John|
++----------+
+
+scala> implicit val mapEncoder=org.apache.spark.sql.Encoders.kryo[Map[String,Any]]
+mapEncoder: org.apache.spark.sql.Encoder[Map[String,Any]] = class[value[0]: binary]
+
+scala> teenAgers.map(teenAge => teenAge.getValuesMap[Any](List("name","age"))).collect()
+res19: Array[Map[String,Any]] = Array(Map(name -> Jyoti, age -> 23), Map(name -> John, age -> 24))
+
+scala> teenAgers.map(row => "Name:"+row(0)).show
++----------+
+|     value|
++----------+
+|Name:Jyoti|
+| Name:John|
++----------+
+
+
+scala> teenAgers.map(row => "Age:"+row(1)).show
++------+
+| value|
++------+
+|Age:23|
+|Age:24|
++------+
+
+b]Programatically specifying the schema-
+
+
+scala> import org.apache.spark.sql.types._
+import org.apache.spark.sql.types._
+
+scala> import org.apache.spark.sql._
+import org.apache.spark.sql._
+
+scala> val schemaString="name age"
+schemaString: String = name age
+
+scala> val file="C:/Users/sashetye/demo/Person.txt "
+file: String = "C:/Users/sashetye/demo/Person.txt "
+
+scala> val fieldsArray=schemaString.split(" ")
+fieldsArray: Array[String] = Array(name, age)
+
+scala> val fields=fieldsArray.map(f => StructField(f,StringType,nullable=true))
+fields: Array[org.apache.spark.sql.types.StructField] = Array(StructField(name,StringType,true), StructField(age,StringType,true))
+
+scala> val schema=StructType(fields)
+schema: org.apache.spark.sql.types.StructType = StructType(StructField(name,StringType,true), StructField(age,StringType,true))
+
+scala> val peopleRDD=sc.textFile(file)
+peopleRDD: org.apache.spark.rdd.RDD[String] = C:/Users/sashetye/demo/Person.txt  MapPartitionsRDD[43] at textFile at <console>:32
+
+scala> val rowRDD=peopleRDD.map(_.split(","))
+rowRDD: org.apache.spark.rdd.RDD[Array[String]] = MapPartitionsRDD[44] at map at <console>:31
+
+scala> val rowRDD=peopleRDD.map(_.split(",")).map(attr => Row.fromSeq(attr))
+rowRDD: org.apache.spark.rdd.RDD[org.apache.spark.sql.Row] = MapPartitionsRDD[46] at map at <console>:31
+
+scala> val peopleDf=spark.createDataFrame(rowRDD,schema)
+peopleDf: org.apache.spark.sql.DataFrame = [name: string, age: string]
+
+scala> peopleDf.show
++------+---+
+|  name|age|
++------+---+
+|  Name|Age|
+|Manish| 45|
+| Jyoti| 23|
+|  Alex| 50|
+|  John| 24|
++------+---+
+
+
+scala> peopleDf.createOrReplaceTempView("MyTable")
+
+scala> spark.sql("select * from MyTable")
+res13: org.apache.spark.sql.DataFrame = [name: string, age: string]
+
+scala> spark.sql("select * from MyTable").show
++------+---+
+|  name|age|
++------+---+
+|  Name|Age|
+|Manish| 45|
+| Jyoti| 23|
+|  Alex| 50|
+|  John| 24|
++------+---+
+
+
+
+
+
+
+
+
+
+
+
+
+

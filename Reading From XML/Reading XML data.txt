@@ -1,0 +1,73 @@
+Reading XML-
+
+C:\Users\sashetye\software\spark-2.4.3\bin>spark-shell --packages com.databricks:Spark-xml_2.10:0.4.1
+
+scala> val df=spark.read.format("xml").option("rowTag","book").load("C:/Users/sashetye/demo/books.xml")
+df: org.apache.spark.sql.DataFrame = [_category: string, _cover: string ... 4 more fields]
+
+scala> df.columns.foreach(println)
+_category
+_cover
+author
+price
+title
+year
+
+scala> df.show
++---------+---------+--------------------+-----+--------------------+----+
+|_category|   _cover|              author|price|               title|year|
++---------+---------+--------------------+-----+--------------------+----+
+|  cooking|     null|[Giada De Laurent...| 30.0|[Everyday Italian...|2005|
+| children|     null|      [J K. Rowling]|29.99|  [Harry Potter, en]|2005|
+|      web|     null|[James McGovern, ...|49.99|[XQuery Kick Star...|2003|
+|      web|paperback|       [Erik T. Ray]|39.95|  [Learning XML, en]|2003|
++---------+---------+--------------------+-----+--------------------+----+
+
+
+scala> df.count
+res2: Long = 4
+
+scala> df.describe("Price").show
++-------+-----------------+
+|summary|            Price|
++-------+-----------------+
+|  count|                4|
+|   mean|          37.4825|
+| stddev|9.568202112553157|
+|    min|            29.99|
+|    max|            49.99|
++-------+-----------------+
+
+
+scala> df.select($"year",$"price").show
++----+-----+
+|year|price|
++----+-----+
+|2005| 30.0|
+|2005|29.99|
+|2003|49.99|
+|2003|39.95|
++----+-----+
+
+or
+
+
+scala> df.select("year","price").show
++----+-----+
+|year|price|
++----+-----+
+|2005| 30.0|
+|2005|29.99|
+|2003|49.99|
+|2003|39.95|
++----+-----+
+
+
+
+
+
+
+
+
+
+

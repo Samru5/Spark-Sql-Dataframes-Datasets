@@ -1,0 +1,43 @@
+scala> import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.SparkSession
+
+scala> val spark=SparkSession.builder.appName("Basic Examples").config("spark.some.config.option","some-value").getOrCreate()
+19/07/08 15:09:31 WARN SparkSession$Builder: Using an existing SparkSession; some configuration may not take effect.
+spark: org.apache.spark.sql.SparkSession = org.apache.spark.sql.SparkSession@adbc3bc
+
+scala> import spark.implicits._
+import spark.implicits._
+
+scala> val df=spark.read.
+csv   format   jdbc   json   load   option   options   orc   parquet   schema   table   text   textFile
+
+scala> val df=spark.read.csv("C:/Users/sashetye/demo/Employee.csv")
+df: org.apache.spark.sql.DataFrame = [_c0: string, _c1: string ... 2 more fields]
+
+scala> df.show()
++----+---------+-------+------+
+| _c0|      _c1|    _c2|   _c3|
++----+---------+-------+------+
+|Year|FirstName|Country|Gender|
+|2016|     John|    Ind|     M|
+|2018|     Alex|    Aus|     M|
+|2019|    Meena|America|     F|
+|2017|      Sam| Africa|     M|
+|2014|     Alex|  Japan|     M|
++----+---------+-------+------+
+
+
+scala> val data=df.withColumnRenamed("_c0","Year").withColumnRenamed("_c1","FirstName").withColumnRenamed("_c2","Country").withColumnRenamed("_c3","Gender")
+data: org.apache.spark.sql.DataFrame = [Year: string, FirstName: string ... 2 more fields]
+
+scala> data.show
++----+---------+-------+------+
+|Year|FirstName|Country|Gender|
++----+---------+-------+------+
+|Year|FirstName|Country|Gender|
+|2016|     John|    Ind|     M|
+|2018|     Alex|    Aus|     M|
+|2019|    Meena|America|     F|
+|2017|      Sam| Africa|     M|
+|2014|     Alex|  Japan|     M|
++----+---------+-------+------+

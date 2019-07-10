@@ -1,0 +1,71 @@
+
+scala>  import org.apache.spark.sql._
+import org.apache.spark.sql._
+
+scala>  import spark.implicits._
+import spark.implicits._
+
+scala> case class Employee(year:String,firstName:String,country:String,gender:String)
+defined class Employee
+
+scala>  val empDF=spark.sparkContext.textFile("C:/Users/sashetye/demo/Employee.csv").map(_.split(",")).map(attributes => Employee(attributes(0),attributes(1),attributes(2),attributes(3))).toDF()
+empDF: org.apache.spark.sql.DataFrame = [year: int, firstName: string ... 2 more fields]
+
+
+scala> empDF.createOrReplaceTempView("Employee")
+
+
+scala> val data=spark.sql("select firstName,Country from Employee where year between 2012 and 2017 ")
+data: org.apache.spark.sql.DataFrame = [firstName: string, Country: string]
+
+scala> data.show
++---------+-------+
+|firstName|Country|
++---------+-------+
+|     John|    Ind|
+|      Sam| Africa|
+|     Alex|  Japan|
++---------+-------+
+
+
+scala> data.map(myName =>"Name is: "+myName(0)).show
++-------------+
+|        value|
++-------------+
+|Name is: John|
+| Name is: Sam|
+|Name is: Alex|
++-------------+
+
+scala> val data=spark.sql("select * from Employee ")
+data: org.apache.spark.sql.DataFrame = [year: string, firstName: string ... 2 more fields]
+
+scala> data.show
++----+---------+-------+------+
+|year|firstName|country|gender|
++----+---------+-------+------+
+|Year|FirstName|Country|Gender|
+|2016|     John|    Ind|     M|
+|2018|     Alex|    Aus|     M|
+|2019|    Meena|America|     F|
+|2017|      Sam| Africa|     M|
+|2014|     Alex|  Japan|     M|
++----+---------+-------+------+
+
+
+scala> data.map(myYear => "Year:"+myYear.getAs[Int]("year")).show
++---------+
+|    value|
++---------+
+|Year:Year|
+|Year:2016|
+|Year:2018|
+|Year:2019|
+|Year:2017|
+|Year:2014|
++---------+
+
+
+scala> data.map(sample =>sample.getValuesMap[String](List("firstName","gender"))).collect
+res21: Array[Map[String,String]] = Array(Map(firstName -> FirstName, gender -> Gender), Map(firstName -> John, gender -> M), Map(firstName -> Alex, gender -> M), Map(firstName -> Meena, gender -> F), Map(firstName -> Sam, gender -> M), Map(firstName -> Alex, gender -> M))
+

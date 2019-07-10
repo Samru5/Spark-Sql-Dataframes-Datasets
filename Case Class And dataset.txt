@@ -1,0 +1,21 @@
+
+scala> case class Employee(name:String,age:Long)
+defined class Employee
+
+scala> val ds=Seq(Employee("John",23),Employee("Seema",45)).toDS()
+ds: org.apache.spark.sql.Dataset[Employee] = [name: string, age: bigint]
+
+scala> ds.show
++-----+---+
+| name|age|
++-----+---+
+| John| 23|
+|Seema| 45|
++-----+---+
+
+
+scala> val numbers=Seq(1,2,3,45).toDS()
+numbers: org.apache.spark.sql.Dataset[Int] = [value: int]
+
+scala> numbers.map(_ + 1).collect
+res1: Array[Int] = Array(2, 3, 4, 46)

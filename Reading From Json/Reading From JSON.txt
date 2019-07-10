@@ -1,0 +1,37 @@
+
+scala> val jsonData="C:/Users/sashetye/demo/Employee.json"
+jsonData: String = C:/Users/sashetye/demo/Employee.json
+
+scala> val df = spark.read.option("multiline", "true").json(jsonData)
+df: org.apache.spark.sql.DataFrame = [employee: struct<married: boolean, name: string ... 1 more field>]
+
+scala> df.show
++--------------------+
+|            employee|
++--------------------+
+|[true, sonoo, 56000]|
++--------------------+
+
+scala> val spark = SparkSession.builder().getOrCreate()
+spark: org.apache.spark.sql.SparkSession = org.apache.spark.sql.SparkSession@7939a6da
+
+
+scala> val df = spark.read.json(spark.sparkContext.wholeTextFiles("C:/Users/sashetye/demo/Employee.json").values)
+warning: there was one deprecation warning; re-run with -deprecation for details
+df: org.apache.spark.sql.DataFrame = [employee: struct<married: boolean, name: string ... 1 more field>]
+
+scala> df.show
++--------------------+
+|            employee|
++--------------------+
+|[true, sonoo, 56000]|
++--------------------+
+
+scala> df.printSchema()
+root
+ |-- employee: struct (nullable = true)
+ |    |-- married: boolean (nullable = true)
+ |    |-- name: string (nullable = true)
+ |    |-- salary: long (nullable = true)
+
+
