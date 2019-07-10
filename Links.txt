@@ -8,6 +8,9 @@ https://www.youtube.com/watch?v=YZlEJLGtqlQ
 https://www.youtube.com/watch?v=aO0l0KpYnes
 https://www.youtube.com/watch?v=WS1JAcdTntg
 https://www.youtube.com/watch?v=aO0l0KpYnes&list=PLqXydJzDNxiKuTZOsmsAfDsktSj69GgUa
+https://www.youtube.com/watch?v=1aCpLUFTja0
+https://sparkbyexamples.com/rename-a-column-on-spark-dataframes/
+https://www.youtube.com/watch?v=_1byVWTEK1s
 
 
 https://www.youtube.com/watch?v=Mxw6QZk1CMY
@@ -19,3 +22,4 @@ https://medium.com/@InDataLabs/converting-spark-rdd-to-dataframe-and-dataset-exp
 
 https://www.youtube.com/watch?v=WHLJzvcdyjE
 https://www.youtube.com/watch?v=5V-Wtfrc38U
+https://www.youtube.com/watch?v=pTSPD83x4yE
