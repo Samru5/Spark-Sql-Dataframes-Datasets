@@ -41,3 +41,14 @@ scala> data.show
 |2017|      Sam| Africa|     M|
 |2014|     Alex|  Japan|     M|
 +----+---------+-------+------+
+
+
+scala> val df = Seq("I am a DataFrame!").toDF("text")
+df: org.apache.spark.sql.DataFrame = [text: string]
+
+scala> df.show
++-----------------+
+|             text|
++-----------------+
+|I am a DataFrame!|
++-----------------+
