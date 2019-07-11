@@ -1,0 +1,43 @@
+
+scala> val lines = sc.textFile("C:/Users/sashetye/demo/sample.csv")
+lines: org.apache.spark.rdd.RDD[String] = C:/Users/sashetye/demo/sample.csv MapPartitionsRDD[78] at textFile at <console>:30
+
+scala>  val header = lines.first
+header: String = auctionid,bid,bidtime,bidder,bidderrate,openbid,price
+
+scala> lines.count
+res32: Long = 6
+
+scala> case class Auction(auctionid: String, bid: Float, bidtime: Float, bidder: String, bidderrate: Int, openbid: Float, price: Float)
+defined class Auction
+
+scala>  val noheader = lines.filter(_ != header)
+noheader: org.apache.spark.rdd.RDD[String] = MapPartitionsRDD[79] at filter at <console>:33
+
+scala> val auctions = noheader.map(_.split(",")).map(r => Auction(r(0), r(1).toFloat, r(2).toFloat, r(3), r(4).toInt, r(5).toFloat, r(6).toFloat))
+auctions: org.apache.spark.rdd.RDD[Auction] = MapPartitionsRDD[81] at map at <console>:33
+
+scala> val df = auctions.toDF
+df: org.apache.spark.sql.DataFrame = [auctionid: string, bid: float ... 5 more fields]
+
+scala> df.printSchema
+root
+ |-- auctionid: string (nullable = true)
+ |-- bid: float (nullable = false)
+ |-- bidtime: float (nullable = false)
+ |-- bidder: string (nullable = true)
+ |-- bidderrate: integer (nullable = false)
+ |-- openbid: float (nullable = false)
+ |-- price: float (nullable = false)
+
+
+scala> df.show
++----------+------+----------+-----------+----------+-------+------+
+| auctionid|   bid|   bidtime|     bidder|bidderrate|openbid| price|
++----------+------+----------+-----------+----------+-------+------+
+|1638843936| 500.0|0.47836804|  kona-java|       181|  500.0|1625.0|
+|1638843936| 800.0| 0.8263889|     doc213|        60|  500.0|1625.0|
+|1638843936| 600.0| 3.7611227|       zmxu|         7|  500.0|1625.0|
+|1638843936|1500.0| 5.2263775|carloss8055|         5|  500.0|1625.0|
+|1638843936|1600.0|  6.570625|    jdrinaz|         6|  500.0|1625.0|
++----------+------+----------+-----------+----------+-------+------+
