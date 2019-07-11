@@ -1,4 +1,77 @@
 
+scala>  val df = spark.read.format("csv").option("header", "true").load("C:/Users/sashetye/demo/sample.csv")
+df: org.apache.spark.sql.DataFrame = [auctionid: string, bid: string ... 5 more fields]
+
+scala> df.printSchema
+root
+ |-- auctionid: string (nullable = true)
+ |-- bid: string (nullable = true)
+ |-- bidtime: string (nullable = true)
+ |-- bidder: string (nullable = true)
+ |-- bidderrate: string (nullable = true)
+ |-- openbid: string (nullable = true)
+ |-- price: string (nullable = true)
+
+
+scala> df.show
++----------+----+-----------+-----------+----------+-------+-----+
+| auctionid| bid|    bidtime|     bidder|bidderrate|openbid|price|
++----------+----+-----------+-----------+----------+-------+-----+
+|1638843936| 500|0.478368056|  kona-java|       181|    500| 1625|
+|1638843936| 800|0.826388889|     doc213|        60|    500| 1625|
+|1638843936| 600|3.761122685|       zmxu|         7|    500| 1625|
+|1638843936|1500|5.226377315|carloss8055|         5|    500| 1625|
+|1638843936|1600|   6.570625|    jdrinaz|         6|    500| 1625|
++----------+----+-----------+-----------+----------+-------+-----+
+
+
+scala> df.select("auctionid").distinct.count
+res41: Long = 1
+
+scala> df.groupBy("bidder").count.show
++-----------+-----+
+|     bidder|count|
++-----------+-----+
+|       zmxu|    1|
+|carloss8055|    1|
+|  kona-java|    1|
+|     doc213|    1|
+|    jdrinaz|    1|
++-----------+-----+
+
+
+scala> df.registerTempTable("auctions")
+warning: there was one deprecation warning; re-run with -deprecation for details
+
+scala> val sql = spark.sql("SELECT count(*) AS count FROM auctions")
+sql: org.apache.spark.sql.DataFrame = [count: bigint]
+
+
+scala> sql.show
++-----+
+|count|
++-----+
+|    5|
++-----+
+
+
+scala>  val count = sql.collect()(0).getLong(0)
+count: Long = 5
+
+
+scala> df.filter($"bidder".like("d%")).show
++----------+-----+---------+------+----------+-------+------+
+| auctionid|  bid|  bidtime|bidder|bidderrate|openbid| price|
++----------+-----+---------+------+----------+-------+------+
+|1638843936|800.0|0.8263889|doc213|        60|  500.0|1625.0|
++----------+-----+---------+------+----------+-------+------+
+
+
+
+---------------------------------------------------------------------------------
+or
+
+
 scala> val lines = sc.textFile("C:/Users/sashetye/demo/sample.csv")
 lines: org.apache.spark.rdd.RDD[String] = C:/Users/sashetye/demo/sample.csv MapPartitionsRDD[78] at textFile at <console>:30
 
