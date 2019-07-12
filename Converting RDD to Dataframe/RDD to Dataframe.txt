@@ -171,6 +171,29 @@ scala> spark.sql("select * from MyTable").show
 +------+---+
 
 
+scala> val colours=List("red","blue","pink","green","black","yellow")
+colours: List[String] = List(red, blue, pink, green, black, yellow)
+
+scala> val colours_df=sc.parallelize(colours).map(x =>(x,x.length)).toDF("Colour","Length")
+colours_df: org.apache.spark.sql.DataFrame = [Colour: string, Length: int]
+
+scala> colours_df.dtypes
+res1: Array[(String, String)] = Array((Colour,StringType), (Length,IntegerType))
+
+scala> colours_df.show
++------+------+
+|Colour|Length|
++------+------+
+|   red|     3|
+|  blue|     4|
+|  pink|     4|
+| green|     5|
+| black|     5|
+|yellow|     6|
++------+------+
+
+
+
 
 
 
