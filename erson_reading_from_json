@@ -1,0 +1,80 @@
+
+scala> val myFile=sc.wholeTextFiles("C:/Users/sashetye/demo/Person.json").map(x => x._2)
+myFile: org.apache.spark.rdd.RDD[String] = MapPartitionsRDD[49] at map at <console>:24
+
+scala> val sqlContext=spark.sqlContext
+sqlContext: org.apache.spark.sql.SQLContext = org.apache.spark.sql.SQLContext@6bc67b0b
+
+scala> val data=spark.read.json(myFile)
+warning: there was one deprecation warning; re-run with -deprecation for details
+data: org.apache.spark.sql.DataFrame = [Count: string, County: string ... 3 more fields]
+
+scala> data.show
++-----+------+----------+---+----+
+|Count|County|First Name|Sex|Year|
++-----+------+----------+---+----+
+|  272| KINGS|     DAVID|  M|2013|
+|  268| KINGS|    JAYDEN|  M|2013|
+|  219|QUEENS|    JAYDEN|  M|2013|
+|  219| KINGS|     MOSHE|  M|2013|
+|  216|QUEENS|     ETHAN|  M|2013|
++-----+------+----------+---+----+
+
+
+scala> data.printSchema
+root
+ |-- Count: string (nullable = true)
+ |-- County: string (nullable = true)
+ |-- First Name: string (nullable = true)
+ |-- Sex: string (nullable = true)
+ |-- Year: string (nullable = true)
+
+
+scala> data.select(col("Year")).show
++----+
+|Year|
++----+
+|2013|
+|2013|
+|2013|
+|2013|
+|2013|
++----+
+
+
+scala> data.select(col("Year")+1).show
++----------+
+|(Year + 1)|
++----------+
+|    2014.0|
+|    2014.0|
+|    2014.0|
+|    2014.0|
+|    2014.0|
++----------+
+
+
+scala> data.withColumnRenamed("First Name","FirstName")
+res7: org.apache.spark.sql.DataFrame = [Count: string, County: string ... 3 more fields]
+
+scala> val myDF=data.withColumnRenamed("First Name","FirstName")
+myDF: org.apache.spark.sql.DataFrame = [Count: string, County: string ... 3 more fields]
+
+scala> myDF.show
++-----+------+---------+---+----+
+|Count|County|FirstName|Sex|Year|
++-----+------+---------+---+----+
+|  272| KINGS|    DAVID|  M|2013|
+|  268| KINGS|   JAYDEN|  M|2013|
+|  219|QUEENS|   JAYDEN|  M|2013|
+|  219| KINGS|    MOSHE|  M|2013|
+|  216|QUEENS|    ETHAN|  M|2013|
++-----+------+---------+---+----+
+
+
+scala> myDF.write.parquet("writers.parquet")
+
+scala> val d=spark.read.parquet("writers.parquet")
+d: org.apache.spark.sql.DataFrame = [Count: string, County: string ... 3 more fields]
+
+scala> d.show
