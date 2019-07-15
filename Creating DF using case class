@@ -1,0 +1,108 @@
+
+
+scala> case class Person(name: String, age: Int)
+defined class Person
+
+scala> val people = Seq(Person("Jacek", 42), Person("Patryk", 19), Person("Maksym", 5))
+people: Seq[Person] = List(Person(Jacek,42), Person(Patryk,19), Person(Maksym,5))
+
+scala>  val df = spark.createDataFrame(people)
+df: org.apache.spark.sql.DataFrame = [name: string, age: int]
+
+scala> df.show
++------+---+
+|  name|age|
++------+---+
+| Jacek| 42|
+|Patryk| 19|
+|Maksym|  5|
++------+---+
+
+
+scala> val sqlContext=spark.sqlContext
+sqlContext: org.apache.spark.sql.SQLContext = org.apache.spark.sql.SQLContext@8862881
+
+scala> df.createOrReplaceTempView("Person")
+
+scala> sqlContext.sql("select name from person")
+res23: org.apache.spark.sql.DataFrame = [name: string]
+
+scala> sqlContext.sql("select name from person").show
++------+
+|  name|
++------+
+| Jacek|
+|Patryk|
+|Maksym|
++------+
+
+
+scala> df.orderBy(col("name")).show
++------+---+
+|  name|age|
++------+---+
+| Jacek| 42|
+|Maksym|  5|
+|Patryk| 19|
++------+---+
+
+
+scala> df.sort(col("age")).show
++------+---+
+|  name|age|
++------+---+
+|Maksym|  5|
+|Patryk| 19|
+| Jacek| 42|
++------+---+
+
+
+Craeting dataset from case class:-
+
+scala> case class Author(fitsName:String,lastName:String,dob:String)
+defined class Author
+
+scala> val authors = Seq(
+     | Author("Thomas","Hardy","June 2,1840"),
+     | Author("Thomas","Hardy","June 2,1840"),
+     | Author("Thomas","H",null),
+     | Author("Jane","Austen","16 December 1775"),
+     | Author("Emily",null,null))
+authors: Seq[Author] = List(Author(Thomas,Hardy,June 2,1840), Author(Thomas,Hardy,June 2,1840), Author(Thomas,H,null), Author(Jane,Austen,16 December 1775), Author(Emily,null,null))
+
+scala> val ds1=sc.parallelize(authors).toDS()
+ds1: org.apache.spark.sql.Dataset[Author] = [fitsName: string, lastName: string ... 1 more field]
+
+scala> ds1.show
++--------+--------+----------------+
+|fitsName|lastName|             dob|
++--------+--------+----------------+
+|  Thomas|   Hardy|     June 2,1840|
+|  Thomas|   Hardy|     June 2,1840|
+|  Thomas|       H|            null|
+|    Jane|  Austen|16 December 1775|
+|   Emily|    null|            null|
++--------+--------+----------------+
+
+
+scala> ds1.dropDuplicates().show
++--------+--------+----------------+
+|fitsName|lastName|             dob|
++--------+--------+----------------+
+|    Jane|  Austen|16 December 1775|
+|   Emily|    null|            null|
+|  Thomas|   Hardy|     June 2,1840|
+|  Thomas|       H|            null|
++--------+--------+----------------+
+
+
+scala> ds1.dropDuplicates("fitsName").show
++--------+--------+----------------+
+|fitsName|lastName|             dob|
++--------+--------+----------------+
+|   Emily|    null|            null|
+|    Jane|  Austen|16 December 1775|
+|  Thomas|   Hardy|     June 2,1840|
++--------+--------+----------------+
+
+
