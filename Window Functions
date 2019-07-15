@@ -1,0 +1,516 @@
+
+scala> case class Employee(dept:String,id:Long,salary:Long)
+defined class Employee
+
+
+scala> val empData=Seq(Employee("HR",101,45600),Employee("Quality_Control",102,12000),Employee("Comp",103,2300),Employee("IT",104,6500)).toDS
+empData: org.apache.spark.sql.Dataset[Employee] = [dept: string, id: bigint ... 1 more field]
+
+scala> empData.createOrReplaceTempView("Employee")
+
+scala> val sqlContext=spark.sqlContext
+sqlContext: org.apache.spark.sql.SQLContext = org.apache.spark.sql.SQLContext@6bc67b0b
+
+
+scala> sqlContext.sql("""select * from Employee """).show
++---------------+---+------+
+|           dept| id|salary|
++---------------+---+------+
+|             HR|101| 45600|
+|Quality_Control|102| 12000|
+|           Comp|103|  2300|
+|             IT|104|  6500|
++---------------+---+------+
+
+scala> import org.apache.spark.sql.expressions.Window
+import org.apache.spark.sql.expressions.Window
+
+
+scala>  val byDepName = Window.partitionBy("dept")
+byDepName: org.apache.spark.sql.expressions.WindowSpec = org.apache.spark.sql.expressions.WindowSpec@388f2bca
+                ^
+
+scala> empData.withColumn("avg",avg("salary") over byDepName).show
++---------------+---+------+-------+
+|           dept| id|salary|    avg|
++---------------+---+------+-------+
+|             HR|101| 45600|45600.0|
+|Quality_Control|102| 12000|12000.0|
+|             IT|104|  6500| 6500.0|
+|           Comp|103|  2300| 2300.0|
++---------------+---+------+-------+
+
+
+scala> val pairs = for {
+     |   x <- 1 to 5
+     |   y <- 1 to 2
+     | } yield (x, 10 * x * y)
+pairs: scala.collection.immutable.IndexedSeq[(Int, Int)] = Vector((1,10), (1,20), (2,20), (2,40), (3,30), (3,60), (4,40), (4,80), (5,50), (5,100))
+
+scala> val ds = pairs.toDF("ns", "tens")
+ds: org.apache.spark.sql.DataFrame = [ns: int, tens: int]
+
+scala> ds.show
++---+----+
+| ns|tens|
++---+----+
+|  1|  10|
+|  1|  20|
+|  2|  20|
+|  2|  40|
+|  3|  30|
+|  3|  60|
+|  4|  40|
+|  4|  80|
+|  5|  50|
+|  5| 100|
++---+----+
+
+
+scala> import org.apache.spark.sql.expressions.Window
+import org.apache.spark.sql.expressions.Window
+
+scala> val overNs = Window.partitionBy('ns).orderBy('tens)
+overNs: org.apache.spark.sql.expressions.WindowSpec = org.apache.spark.sql.expressions.WindowSpec@992b00b
+
+scala> val diff = lead('tens, 1).over(overNs)
+diff: org.apache.spark.sql.Column = lead(tens, 1, NULL) OVER (PARTITION BY ns ORDER BY tens ASC NULLS FIRST unspecifiedframe$())
+
+scala> ds.withColumn("diff", diff - 'tens).show
++---+----+----+
+| ns|tens|diff|
++---+----+----+
+|  1|  10|  10|
+|  1|  20|null|
+|  3|  30|  30|
+|  3|  60|null|
+|  5|  50|  50|
+|  5| 100|null|
+|  4|  40|  40|
+|  4|  80|null|
+|  2|  20|  20|
+|  2|  40|null|
++---+----+----+
+
+
+scala> val sales = Seq(
+     | (0, 0, 0, 5),
+     |   (1, 0, 1, 3),
+     |   (2, 0, 2, 1),
+     |   (3, 1, 0, 2),
+     |   (4, 2, 0, 8),
+     |   (5, 2, 2, 8)).toDF("id", "orderID", "prodID", "orderQty")
+sales: org.apache.spark.sql.DataFrame = [id: int, orderID: int ... 2 more fields]
+
+scala> sales.show
++---+-------+------+--------+
+| id|orderID|prodID|orderQty|
++---+-------+------+--------+
+|  0|      0|     0|       5|
+|  1|      0|     1|       3|
+|  2|      0|     2|       1|
+|  3|      1|     0|       2|
+|  4|      2|     0|       8|
+|  5|      2|     2|       8|
++---+-------+------+--------+
+
+
+scala> val orderedByID = Window.orderBy('id)
+orderedByID: org.apache.spark.sql.expressions.WindowSpec = org.apache.spark.sql.expressions.WindowSpec@50b0126d
+
+scala> val totalQty = sum('orderQty).over(orderedByID).as('running_total)
+totalQty: org.apache.spark.sql.Column = sum(orderQty) OVER (ORDER BY id ASC NULLS FIRST unspecifiedframe$()) AS `running_total`
+
+scala> val salesTotalQty = sales.select('*, totalQty).orderBy('id)
+salesTotalQty: org.apache.spark.sql.Dataset[org.apache.spark.sql.Row] = [id: int, orderID: int ... 3 more fields]
+
+scala> salesTotalQty.show
+19/07/11 18:45:20 WARN WindowExec: No Partition Defined for Window operation! Moving all data to a single partition, this can cause serious performance degradation.
++---+-------+------+--------+-------------+
+| id|orderID|prodID|orderQty|running_total|
++---+-------+------+--------+-------------+
+|  0|      0|     0|       5|            5|
+|  1|      0|     1|       3|            8|
+|  2|      0|     2|       1|            9|
+|  3|      1|     0|       2|           11|
+|  4|      2|     0|       8|           19|
+|  5|      2|     2|       8|           27|
++---+-------+------+--------+-------------+
+
+
+scala> val byOrderId = orderedByID.partitionBy('orderID)
+byOrderId: org.apache.spark.sql.expressions.WindowSpec = org.apache.spark.sql.expressions.WindowSpec@4535f4e9
+
+scala> val totalQtyPerOrder = sum('orderQty).over(byOrderId).as('running_total_per_order)
+totalQtyPerOrder: org.apache.spark.sql.Column = sum(orderQty) OVER (PARTITION BY orderID ORDER BY id ASC NULLS FIRST unspecifiedframe$()) AS `running_total_per_order`
+
+scala> val salesTotalQtyPerOrder = sales.select('*, totalQtyPerOrder).orderBy('id)
+salesTotalQtyPerOrder: org.apache.spark.sql.Dataset[org.apache.spark.sql.Row] = [id: int, orderID: int ... 3 more fields]
+
+scala> salesTotalQtyPerOrder.show
++---+-------+------+--------+-----------------------+
+| id|orderID|prodID|orderQty|running_total_per_order|
++---+-------+------+--------+-----------------------+
+|  0|      0|     0|       5|                      5|
+|  1|      0|     1|       3|                      8|
+|  2|      0|     2|       1|                      9|
+|  3|      1|     0|       2|                      2|
+|  4|      2|     0|       8|                      8|
+|  5|      2|     2|       8|                     16|
++---+-------+------+--------+-----------------------+
+
+lag Window Function:-
+
+
+scala> val buckets = spark.range(9).withColumn("bucket", 'id % 3)
+buckets: org.apache.spark.sql.DataFrame = [id: bigint, bucket: bigint]
+
+scala> val dataset = buckets.union(buckets)
+dataset: org.apache.spark.sql.Dataset[org.apache.spark.sql.Row] = [id: bigint, bucket: bigint]
+
+scala> import org.apache.spark.sql.expressions.Window
+import org.apache.spark.sql.expressions.Window
+
+scala> val windowSpec = Window.partitionBy('bucket).orderBy('id)
+windowSpec: org.apache.spark.sql.expressions.WindowSpec = org.apache.spark.sql.expressions.WindowSpec@14983113
+
+scala> dataset.withColumn("lag", lag('id, 1) over windowSpec).show
++---+------+----+
+| id|bucket| lag|
++---+------+----+
+|  0|     0|null|
+|  0|     0|   0|
+|  3|     0|   0|
+|  3|     0|   3|
+|  6|     0|   3|
+|  6|     0|   6|
+|  1|     1|null|
+|  1|     1|   1|
+|  4|     1|   1|
+|  4|     1|   4|
+|  7|     1|   4|
+|  7|     1|   7|
+|  2|     2|null|
+|  2|     2|   2|
+|  5|     2|   2|
+|  5|     2|   5|
+|  8|     2|   5|
+|  8|     2|   8|
++---+------+----+
+
+
+scala> dataset.withColumn("lag", lag('id, 2, "<default_value>") over windowSpec).show
++---+------+----+
+| id|bucket| lag|
++---+------+----+
+|  0|     0|null|
+|  0|     0|null|
+|  3|     0|   0|
+|  3|     0|   0|
+|  6|     0|   3|
+|  6|     0|   3|
+|  1|     1|null|
+|  1|     1|null|
+|  4|     1|   1|
+|  4|     1|   1|
+|  7|     1|   4|
+|  7|     1|   4|
+|  2|     2|null|
+|  2|     2|null|
+|  5|     2|   2|
+|  5|     2|   2|
+|  8|     2|   5|
+|  8|     2|   5|
++---+------+----+
+
+lead Window Function:-
+
+
+scala> val buckets = spark.range(9).withColumn("bucket", 'id % 3)
+buckets: org.apache.spark.sql.DataFrame = [id: bigint, bucket: bigint]
+
+scala> val dataset = buckets.union(buckets)
+dataset: org.apache.spark.sql.Dataset[org.apache.spark.sql.Row] = [id: bigint, bucket: bigint]
+
+scala> import org.apache.spark.sql.expressions.Window
+import org.apache.spark.sql.expressions.Window
+
+scala> val windowSpec = Window.partitionBy('bucket).orderBy('id)
+windowSpec: org.apache.spark.sql.expressions.WindowSpec = org.apache.spark.sql.expressions.WindowSpec@33a7906d
+
+scala>  dataset.withColumn("lead", lead('id, 1) over windowSpec).show
++---+------+----+
+| id|bucket|lead|
++---+------+----+
+|  0|     0|   0|
+|  0|     0|   3|
+|  3|     0|   3|
+|  3|     0|   6|
+|  6|     0|   6|
+|  6|     0|null|
+|  1|     1|   1|
+|  1|     1|   4|
+|  4|     1|   4|
+|  4|     1|   7|
+|  7|     1|   7|
+|  7|     1|null|
+|  2|     2|   2|
+|  2|     2|   5|
+|  5|     2|   5|
+|  5|     2|   8|
+|  8|     2|   8|
+|  8|     2|null|
++---+------+----+
+
+
+scala> dataset.withColumn("lead", lead('id, 2, "<default_value>") over windowSpec).show
++---+------+----+
+| id|bucket|lead|
++---+------+----+
+|  0|     0|   3|
+|  0|     0|   3|
+|  3|     0|   6|
+|  3|     0|   6|
+|  6|     0|null|
+|  6|     0|null|
+|  1|     1|   4|
+|  1|     1|   4|
+|  4|     1|   7|
+|  4|     1|   7|
+|  7|     1|null|
+|  7|     1|null|
+|  2|     2|   5|
+|  2|     2|   5|
+|  5|     2|   8|
+|  5|     2|   8|
+|  8|     2|null|
+|  8|     2|null|
++---+------+----+
+
+Cumulative Distribution of Records Across Window Partitions?—?cume_dist Window Function:-
+
+
+scala> val buckets = spark.range(9).withColumn("bucket", 'id % 3)
+buckets: org.apache.spark.sql.DataFrame = [id: bigint, bucket: bigint]
+
+scala> val dataset = buckets.union(buckets)
+dataset: org.apache.spark.sql.Dataset[org.apache.spark.sql.Row] = [id: bigint, bucket: bigint]
+
+scala>
+
+scala> import org.apache.spark.sql.expressions.Window
+import org.apache.spark.sql.expressions.Window
+
+scala> val windowSpec = Window.partitionBy('bucket).orderBy('id)
+windowSpec: org.apache.spark.sql.expressions.WindowSpec = org.apache.spark.sql.expressions.WindowSpec@2d67f851
+
+scala> dataset.withColumn("cume_dist", cume_dist over windowSpec).show
++---+------+------------------+
+| id|bucket|         cume_dist|
++---+------+------------------+
+|  0|     0|0.3333333333333333|
+|  0|     0|0.3333333333333333|
+|  3|     0|0.6666666666666666|
+|  3|     0|0.6666666666666666|
+|  6|     0|               1.0|
+|  6|     0|               1.0|
+|  1|     1|0.3333333333333333|
+|  1|     1|0.3333333333333333|
+|  4|     1|0.6666666666666666|
+|  4|     1|0.6666666666666666|
+|  7|     1|               1.0|
+|  7|     1|               1.0|
+|  2|     2|0.3333333333333333|
+|  2|     2|0.3333333333333333|
+|  5|     2|0.6666666666666666|
+|  5|     2|0.6666666666666666|
+|  8|     2|               1.0|
+|  8|     2|               1.0|
++---+------+------------------+
+
+Sequential numbering per window partition?—?row_number Window Function:-
+
+
+scala> val buckets = spark.range(9).withColumn("bucket", 'id % 3)
+buckets: org.apache.spark.sql.DataFrame = [id: bigint, bucket: bigint]
+
+scala> val dataset = buckets.union(buckets)
+dataset: org.apache.spark.sql.Dataset[org.apache.spark.sql.Row] = [id: bigint, bucket: bigint]
+
+scala> import org.apache.spark.sql.expressions.Window
+import org.apache.spark.sql.expressions.Window
+
+scala> val windowSpec = Window.partitionBy('bucket).orderBy('id)
+windowSpec: org.apache.spark.sql.expressions.WindowSpec = org.apache.spark.sql.expressions.WindowSpec@25b16f54
+
+scala> dataset.withColumn("row_number", row_number() over windowSpec).show
++---+------+----------+
+| id|bucket|row_number|
++---+------+----------+
+|  0|     0|         1|
+|  0|     0|         2|
+|  3|     0|         3|
+|  3|     0|         4|
+|  6|     0|         5|
+|  6|     0|         6|
+|  1|     1|         1|
+|  1|     1|         2|
+|  4|     1|         3|
+|  4|     1|         4|
+|  7|     1|         5|
+|  7|     1|         6|
+|  2|     2|         1|
+|  2|     2|         2|
+|  5|     2|         3|
+|  5|     2|         4|
+|  8|     2|         5|
+|  8|     2|         6|
++---+------+----------+
+
+ntile Window Function:-
+
+scala> val dataset = spark.range(7).select('*, 'id % 3 as "bucket")
+dataset: org.apache.spark.sql.DataFrame = [id: bigint, bucket: bigint]
+
+scala> import org.apache.spark.sql.expressions.Window
+import org.apache.spark.sql.expressions.Window
+
+scala> val byBuckets = Window.partitionBy('bucket).orderBy('id)
+byBuckets: org.apache.spark.sql.expressions.WindowSpec = org.apache.spark.sql.expressions.WindowSpec@543897db
+
+scala> dataset.select('*, ntile(3) over byBuckets as "ntile").show
++---+------+-----+
+| id|bucket|ntile|
++---+------+-----+
+|  0|     0|    1|
+|  3|     0|    2|
+|  6|     0|    3|
+|  1|     1|    1|
+|  4|     1|    2|
+|  2|     2|    1|
+|  5|     2|    2|
++---+------+-----+
+
+Ranking Records per Window Partition?—?rank Window Function:-
+
+scala> val dataset = spark.range(9).withColumn("bucket", 'id % 3)
+dataset: org.apache.spark.sql.DataFrame = [id: bigint, bucket: bigint]
+
+scala> import org.apache.spark.sql.expressions.Window
+import org.apache.spark.sql.expressions.Window
+
+scala> val byBucket = Window.partitionBy('bucket).orderBy('id)
+byBucket: org.apache.spark.sql.expressions.WindowSpec = org.apache.spark.sql.expressions.WindowSpec@74935c18
+
+scala> dataset.withColumn("rank", rank over byBucket).show
++---+------+----+
+| id|bucket|rank|
++---+------+----+
+|  0|     0|   1|
+|  3|     0|   2|
+|  6|     0|   3|
+|  1|     1|   1|
+|  4|     1|   2|
+|  7|     1|   3|
+|  2|     2|   1|
+|  5|     2|   2|
+|  8|     2|   3|
++---+------+----+
+
+
+scala> dataset.withColumn("percent_rank", percent_rank over byBucket).show
++---+------+------------+
+| id|bucket|percent_rank|
++---+------+------------+
+|  0|     0|         0.0|
+|  3|     0|         0.5|
+|  6|     0|         1.0|
+|  1|     1|         0.0|
+|  4|     1|         0.5|
+|  7|     1|         1.0|
+|  2|     2|         0.0|
+|  5|     2|         0.5|
+|  8|     2|         1.0|
++---+------+------------+
+
+
+scala> dataset.union(dataset).withColumn("rank", rank over byBucket).show
++---+------+----+
+| id|bucket|rank|
++---+------+----+
+|  0|     0|   1|
+|  0|     0|   1|
+|  3|     0|   3|
+|  3|     0|   3|
+|  6|     0|   5|
+|  6|     0|   5|
+|  1|     1|   1|
+|  1|     1|   1|
+|  4|     1|   3|
+|  4|     1|   3|
+|  7|     1|   5|
+|  7|     1|   5|
+|  2|     2|   1|
+|  2|     2|   1|
+|  5|     2|   3|
+|  5|     2|   3|
+|  8|     2|   5|
+|  8|     2|   5|
++---+------+----+
+
+
+scala> dataset.union(dataset).withColumn("dense_rank", dense_rank over byBucket).show
++---+------+----------+
+| id|bucket|dense_rank|
++---+------+----------+
+|  0|     0|         1|
+|  0|     0|         1|
+|  3|     0|         2|
+|  3|     0|         2|
+|  6|     0|         3|
+|  6|     0|         3|
+|  1|     1|         1|
+|  1|     1|         1|
+|  4|     1|         2|
+|  4|     1|         2|
+|  7|     1|         3|
+|  7|     1|         3|
+|  2|     2|         1|
+|  2|     2|         1|
+|  5|     2|         2|
+|  5|     2|         2|
+|  8|     2|         3|
+|  8|     2|         3|
++---+------+----------+
+
+
+scala> dataset.union(dataset).withColumn("percent_rank", percent_rank over byBucket).show
++---+------+------------+
+| id|bucket|percent_rank|
++---+------+------------+
+|  0|     0|         0.0|
+|  0|     0|         0.0|
+|  3|     0|         0.4|
+|  3|     0|         0.4|
+|  6|     0|         0.8|
+|  6|     0|         0.8|
+|  1|     1|         0.0|
+|  1|     1|         0.0|
+|  4|     1|         0.4|
+|  4|     1|         0.4|
+|  7|     1|         0.8|
+|  7|     1|         0.8|
+|  2|     2|         0.0|
+|  2|     2|         0.0|
+|  5|     2|         0.4|
+|  5|     2|         0.4|
+|  8|     2|         0.8|
+|  8|     2|         0.8|
++---+------+------------+
+
+
+
+
+
+
+
