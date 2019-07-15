@@ -1,0 +1,20 @@
+[{  
+   "bookId":101,
+   "bookName":"SPA",
+   "author":"John"
+},
+{  
+   "bookId":102,
+   "bookName":"MATHS",
+   "Author":"Alex"
+},
+{  
+   "bookId":103,
+   "bookName":"SCIENCE",
+   "Author":"Roy"
+},
+{  
+   "bookId":104,
+   "bookName":"ENGLISH",
+   "Author":"Jim"
+}]
