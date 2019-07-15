@@ -1,0 +1,469 @@
+scala> val colours=List("red","blue","pink","green","black","yellow")
+colours: List[String] = List(red, blue, pink, green, black, yellow)
+
+scala> val colours_df=sc.parallelize(colours).map(x =>(x,x.length)).toDF("Colour","Length")
+colours_df: org.apache.spark.sql.DataFrame = [Colour: string, Length: int]
+
+scala> colours_df.dtypes
+res1: Array[(String, String)] = Array((Colour,StringType), (Length,IntegerType))
+
+scala> colours_df.show
++------+------+
+|Colour|Length|
++------+------+
+|   red|     3|
+|  blue|     4|
+|  pink|     4|
+| green|     5|
+| black|     5|
+|yellow|     6|
++------+------+
+
+
+scala> colours_df.count
+res13: Long = 6
+
+scala> colours_df.columns
+res14: Array[String] = Array(Colour, Length)
+
+
+scala> colours_df.drop("Length").show
++------+
+|Colour|
++------+
+|   red|
+|  blue|
+|  pink|
+| green|
+| black|
+|yellow|
++------+
+              
+scala> colours_df.toJSON
+res18: org.apache.spark.sql.Dataset[String] = [value: string]
+
+
+scala> colours_df.toJSON.collect
+res20: Array[String] = Array({"Colour":"red","Length":3}, {"Colour":"blue","Length":4}, {"Colour":"pink","Length":4}, {"Colour":"green","Length":5}, {"Colour":"black","Length":5}, {"Colour":"yellow","Length":6})
+
+
+scala> colours_df.toJSON.first
+res22: String = {"Colour":"red","Length":3}
+
+
+scala> colours_df.filter(colours_df("length").between(4,6)).select(colours_df("Colour").alias("mid_length_colours")).show
++------------------+
+|mid_length_colours|
++------------------+
+|              blue|
+|              pink|
+|             green|
+|             black|
+|            yellow|
++------------------+
+
+
+scala> colours_df.filter(colours_df("length") > 4).filter(colours_df("colour") !== "yellow").show
+warning: there was one deprecation warning; re-run with -deprecation for details
++------+------+
+|Colour|Length|
++------+------+
+| green|     5|
+| black|     5|
++------+------+
+
+
+scala> colours_df.sort("colour").show
++------+------+
+|Colour|Length|
++------+------+
+| black|     5|
+|  blue|     4|
+| green|     5|
+|  pink|     4|
+|   red|     3|
+|yellow|     6|
++------+------+
+
+
+scala> colours_df.sort("length").show
++------+------+
+|Colour|Length|
++------+------+
+|   red|     3|
+|  pink|     4|
+|  blue|     4|
+| black|     5|
+| green|     5|
+|yellow|     6|
++------+------+
+
+//First filter colors of length more than 4 and then sort on multiple columns
+//The filtered rows are sorted first on the column length in defaultascending order. Rows with same length are sorted on color in descending order
+
+scala> colours_df.filter(colours_df("length") >=4).sort($"length",$"colour".desc).show
++------+------+
+|Colour|Length|
++------+------+
+|  pink|     4|
+|  blue|     4|
+| green|     5|
+| black|     5|
+|yellow|     6|
++------+------+
+
+
+scala> colours_df.orderBy("length","colour").show
++------+------+
+|Colour|Length|
++------+------+
+|   red|     3|
+|  blue|     4|
+|  pink|     4|
+| black|     5|
+| green|     5|
+|yellow|     6|
++------+------+
+
+scala> colours_df.sort($"length",$"colour").show
++------+------+
+|Colour|Length|
++------+------+
+|   red|     3|
+|  blue|     4|
+|  pink|     4|
+| black|     5|
+| green|     5|
+|yellow|     6|
++------+------+
+
+or
+
+
+scala> colours_df.sort($"length".asc,$"colour".asc).show
++------+------+
+|Colour|Length|
++------+------+
+|   red|     3|
+|  blue|     4|
+|  pink|     4|
+| black|     5|
+| green|     5|
+|yellow|     6|
++------+------+
+
+
+scala> colours_df.sort($"length".asc,$"colour".desc).show
++------+------+
+|Colour|Length|
++------+------+
+|   red|     3|
+|  pink|     4|
+|  blue|     4|
+| green|     5|
+| black|     5|
+|yellow|     6|
++------+------+
+
+
+scala> colours_df.sort($"length".desc,$"colour".desc).show
++------+------+
+|Colour|Length|
++------+------+
+|yellow|     6|
+| green|     5|
+| black|     5|
+|  pink|     4|
+|  blue|     4|
+|   red|     3|
++------+------+
+
+
+
+scala> colours_df.groupBy("length").count().show
++------+-----+
+|length|count|
++------+-----+
+|     6|    1|
+|     3|    1|
+|     5|    2|
+|     4|    2|
++------+-----+
+
+
+
+Converting dataset to dataframe:-
+
+
+scala> colours_df.dtypes
+res45: Array[(String, String)] = Array((Colour,StringType), (Length,IntegerType))
+
+scala> colours_df.show
++------+------+
+|Colour|Length|
++------+------+
+|   red|     3|
+|  blue|     4|
+|  pink|     4|
+| green|     5|
+| black|     5|
+|yellow|     6|
++------+------+
+
+
+scala> val df=colours_df.toDF()
+df: org.apache.spark.sql.DataFrame = [Colour: string, Length: int]
+
+scala> df.show
++------+------+
+|Colour|Length|
++------+------+
+|   red|     3|
+|  blue|     4|
+|  pink|     4|
+| green|     5|
+| black|     5|
+|yellow|     6|
++------+------+
+
+Converting dataframe to dataset:-
+
+
+scala> val ds=df.as("Color")
+ds: org.apache.spark.sql.Dataset[org.apache.spark.sql.Row] = [Colour: string, Length: int]
+
+scala> ds.explain
+== Physical Plan ==
+*(1) Project [_1#390 AS Colour#393, _2#391 AS Length#394]
++- *(1) SerializeFromObject [staticinvoke(class org.apache.spark.unsafe.types.UTF8String, StringType, fromString, assertnotnull(input[0, scala.Tuple2, true])._1, true, false) AS _1#390, assertnotnull(input[0, scala.Tuple2, true])._2 AS _2#391]
+   +- Scan[obj#389]
+
+scala> ds.show
++------+------+
+|Colour|Length|
++------+------+
+|   red|     3|
+|  blue|     4|
+|  pink|     4|
+| green|     5|
+| black|     5|
+|yellow|     6|
++------+------+
+
+
+scala> import org.apache.spark.ml.feature.RegexTokenizer
+import org.apache.spark.ml.feature.RegexTokenizer
+
+scala> val date_pattern: String = "\\d{1,4}[/ -]\\d{1,4}[/ -]\\d{1,4}"
+date_pattern: String = \d{1,4}[/ -]\d{1,4}[/ -]\d{1,4}
+
+scala> val textDF = spark.createDataFrame(Seq(
+     | (1, "Hello 1996-12-12 this 1-21-1111 is a 18-9-96 text "),
+     | (2, "string with dates in different 01/02/89 formats"))).
+     | toDF("LineNo","Text")
+textDF: org.apache.spark.sql.DataFrame = [LineNo: int, Text: string]
+
+scala> val textDF = spark.createDataFrame(Seq(
+     | (1, "Hello 1996-12-12 this 1-21-1111 is a 18-9-96 text "),
+     | (2, "string with dates in different 01/02/89 formats"))).
+     | toDF("LineNo","Text")
+textDF: org.apache.spark.sql.DataFrame = [LineNo: int, Text: string]
+
+
+scala> val date_regex = new RegexTokenizer().
+     | setInputCol("Text").setOutputCol("dateStr").
+     | setPattern(date_pattern).setGaps(false)
+date_regex: org.apache.spark.ml.feature.RegexTokenizer = regexTok_258e3b9775c6
+
+scala> date_regex.transform(textDF).select("dateStr").show(false)
++--------------------------------+
+|dateStr                         |
++--------------------------------+
+|[1996-12-12, 1-21-1111, 18-9-96]|
+|[01/02/89]                      |
++--------------------------------+
+
+
+
+------------------------------------------
+
+
+
+scala> case class Samp(a:Int,b:Int,c:Int)
+defined class Samp
+
+scala> val s1=Samp(10,20,30)
+s1: Samp = Samp(10,20,30)
+
+scala> val s2=Samp(1,2,3)
+s2: Samp = Samp(1,2,3)
+
+scala> val s3=Samp(100,200,300)
+s3: Samp = Samp(100,200,300)
+
+scala> val s4=Samp(1000,2000,3000)
+s4: Samp = Samp(1000,2000,3000)
+
+scala> val data=sc.parallelize(List(s1,s2,s3,s4))
+data: org.apache.spark.rdd.RDD[Samp] = ParallelCollectionRDD[51] at parallelize at <console>:33
+
+scala> data.collect
+res7: Array[Samp] = Array(Samp(10,20,30), Samp(1,2,3), Samp(100,200,300), Samp(1000,2000,3000))
+
+scala> val x=data.map(v =>v.a).collect
+x: Array[Int] = Array(10, 1, 100, 1000)
+
+scala> val x=data.map(v =>v.a+ v.b +v.c).collect
+x: Array[Int] = Array(60, 6, 600, 6000)
+
+scala> val df=data.toDF()
+df: org.apache.spark.sql.DataFrame = [a: int, b: int ... 1 more field]
+
+scala> df.show
++----+----+----+
+|   a|   b|   c|
++----+----+----+
+|  10|  20|  30|
+|   1|   2|   3|
+| 100| 200| 300|
+|1000|2000|3000|
++----+----+----+
+
+
+scala> df.printSchema
+root
+ |-- a: integer (nullable = false)
+ |-- b: integer (nullable = false)
+ |-- c: integer (nullable = false)
+
+
+scala> df.registerTempTable("df")
+warning: there was one deprecation warning; re-run with -deprecation for details
+
+scala> val sqlContext=spark.sqlContext
+sqlContext: org.apache.spark.sql.SQLContext = org.apache.spark.sql.SQLContext@3de4c69b
+
+scala> sqlContext.sql("select * from df")
+19/07/12 12:50:29 WARN ObjectStore: Failed to get database global_temp, returning NoSuchObjectException
+res11: org.apache.spark.sql.DataFrame = [a: int, b: int ... 1 more field]
+
+scala> sqlContext.sql("select * from df").show
++----+----+----+
+|   a|   b|   c|
++----+----+----+
+|  10|  20|  30|
+|   1|   2|   3|
+| 100| 200| 300|
+|1000|2000|3000|
++----+----+----+
+
+
+scala> val df2=sqlContext.sql("select a,b from df").show
++----+----+
+|   a|   b|
++----+----+
+|  10|  20|
+|   1|   2|
+| 100| 200|
+|1000|2000|
++----+----+
+
+df2: Unit = ()
+
+scala> val df3=sqlContext.sql("select a,b,c,a+b+c as total from df")
+df3: org.apache.spark.sql.DataFrame = [a: int, b: int ... 2 more fields]
+
+scala> df3.show
++----+----+----+-----+
+|   a|   b|   c|total|
++----+----+----+-----+
+|  10|  20|  30|   60|
+|   1|   2|   3|    6|
+| 100| 200| 300|  600|
+|1000|2000|3000| 6000|
++----+----+----+-----+
+
+-----------------------------------
+
+scala> val data=sc.textFile("C:/Users/sashetye/demo/Employee.csv")
+data: org.apache.spark.rdd.RDD[String] = C:/Users/sashetye/demo/Employee.csv MapPartitionsRDD[71] at textFile at <console>:25
+
+scala> data.count
+res14: Long = 6
+
+scala> data.take(1)
+res15: Array[String] = Array(Year,FirstName,Country,Gender)
+
+scala> val header=data.first
+header: String = Year,FirstName,Country,Gender
+
+scala> data.map(x =>x!=header)
+res16: org.apache.spark.rdd.RDD[Boolean] = MapPartitionsRDD[72] at map at <console>:31
+
+scala> data.map(x =>x!=header).collect
+res17: Array[Boolean] = Array(false, true, true, true, true, true)
+
+scala> data.filter(x =>x!=header).collect
+res18: Array[String] = Array(2016,John,Ind,M, 2018,Alex,Aus,M, 2019,Meena,America,F, 2017,Sam,Africa,M, 2014,Alex,Japan,M)
+
+
+scala> case class Info(year:Int,name:String,country:String,gender:String)
+defined class Info
+
+
+scala>  def toInfo(x:String)={
+     | val w=x.split(",")
+     | val year=w(0)
+     | val name=w(1)
+     | val country=w(2)
+     | val gender=w(3)
+     |  val info=Info(year,name,country,gender)
+     | info
+     | }
+toInfo: (x: String)Info
+
+
+scala> val record="2003,Seema,Eng,F"
+record: String = 2003,Seema,Eng,F
+
+
+
+scala> toInfo(record)
+res27: Info = Info(2003,Seema,Eng,F)
+
+scala> val s=toInfo(record)
+s: Info = Info(2003,Seema,Eng,F)
+
+scala> s.year
+res28: String = 2003
+
+scala> s.name
+res29: String = Seema
+
+scala> s.country
+res30: String = Eng
+
+scala> s.gender
+res31: String = F
+
+
+scala> val sample=data.map(x =>toInfo(x))
+sample: org.apache.spark.rdd.RDD[Info] = MapPartitionsRDD[76] at map at <console>:30
+
+scala> sample.foreach(println)
+Info(2019,Meena,America,F)
+Info(Year,FirstName,Country,Gender)
+Info(2017,Sam,Africa,M)
+Info(2016,John,Ind,M)
+Info(2014,Alex,Japan,M)
+Info(2018,Alex,Aus,M)
+
+
+
+
+
+
+
+
+
+
