@@ -1,0 +1,57 @@
+
+scala> val lines = sc.textFile("C:/Users/sashetye/demo/sample.csv")
+lines: org.apache.spark.rdd.RDD[String] = C:/Users/sashetye/demo/sample.csv MapPartitionsRDD[57] at textFile at <console>:27
+
+scala> val headers = lines.first
+headers: String = auctionid,bid,bidtime,bidder,bidderrate,openbid,price
+
+scala> import org.apache.spark.sql.types.{StructField, StringType}
+import org.apache.spark.sql.types.{StructField, StringType}
+
+scala> val fs = headers.split(",").map(f => StructField(f, StringType))
+fs: Array[org.apache.spark.sql.types.StructField] = Array(StructField(auctionid,StringType,true), StructField(bid,StringType,true), StructField(bidtime,StringType,true), StructField(bidder,StringType,true), StructField(bidderrate,StringType,true), StructField(openbid,StringType,true), StructField(price,StringType,true))
+
+scala> import org.apache.spark.sql.types.StructType
+import org.apache.spark.sql.types.StructType
+
+scala> val schema = StructType(fs)
+schema: org.apache.spark.sql.types.StructType = StructType(StructField(auctionid,StringType,true), StructField(bid,StringType,true), StructField(bidtime,StringType,true), StructField(bidder,StringType,true), StructField(bidderrate,StringType,true), StructField(openbid,StringType,true), StructField(price,StringType,true))
+
+
+scala> val noheaders = lines.filter(_ != headers)
+noheaders: org.apache.spark.rdd.RDD[String] = MapPartitionsRDD[58] at filter at <console>:32
+
+scala> import org.apache.spark.sql.Row
+import org.apache.spark.sql.Row
+
+scala> val rows = noheaders.map(_.split(",")).map(a => Row.fromSeq(a))
+rows: org.apache.spark.rdd.RDD[org.apache.spark.sql.Row] = MapPartitionsRDD[60] at map at <console>:31
+
+scala> val auctions = spark.createDataFrame(rows, schema)
+auctions: org.apache.spark.sql.DataFrame = [auctionid: string, bid: string ... 5 more fields]
+
+scala> auctions.printSchema
+root
+ |-- auctionid: string (nullable = true)
+ |-- bid: string (nullable = true)
+ |-- bidtime: string (nullable = true)
+ |-- bidder: string (nullable = true)
+ |-- bidderrate: string (nullable = true)
+ |-- openbid: string (nullable = true)
+ |-- price: string (nullable = true)
+
+
+scala> auctions.dtypes
+res17: Array[(String, String)] = Array((auctionid,StringType), (bid,StringType), (bidtime,StringType), (bidder,StringType), (bidderrate,StringType), (openbid,StringType), (price,StringType))
+
+scala> auctions.show(5)
++----------+----+-----------+-----------+----------+-------+-----+
+| auctionid| bid|    bidtime|     bidder|bidderrate|openbid|price|
++----------+----+-----------+-----------+----------+-------+-----+
+|1638843936| 500|0.478368056|  kona-java|       181|    500| 1625|
+|1638843936| 800|0.826388889|     doc213|        60|    500| 1625|
+|1638843936| 600|3.761122685|       zmxu|         7|    500| 1625|
+|1638843936|1500|5.226377315|carloss8055|         5|    500| 1625|
+|1638843936|1600|   6.570625|    jdrinaz|         6|    500| 1625|
++----------+----+-----------+-----------+----------+-------+-----+
+
