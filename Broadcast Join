@@ -1,0 +1,204 @@
+
+scala> val df1=spark.range(50).as("a")
+df1: org.apache.spark.sql.Dataset[Long] = [id: bigint]
+
+scala> val df2=spark.range(50).as("b")
+df2: org.apache.spark.sql.Dataset[Long] = [id: bigint]
+
+scala> val df3=spark.range(50).as("c")
+df3: org.apache.spark.sql.Dataset[Long] = [id: bigint]
+
+
+scala> val q=df1.join(df2).where($"a.id" === $"b.id")
+q: org.apache.spark.sql.Dataset[org.apache.spark.sql.Row] = [id: bigint, id: bigint]
+
+
+scala> q.show
++---+---+
+| id| id|
++---+---+
+|  0|  0|
+|  1|  1|
+|  2|  2|
+|  3|  3|
+|  4|  4|
+|  5|  5|
+|  6|  6|
+|  7|  7|
+|  8|  8|
+|  9|  9|
+| 10| 10|
+| 11| 11|
+| 12| 12|
+| 13| 13|
+| 14| 14|
+| 15| 15|
+| 16| 16|
+| 17| 17|
+| 18| 18|
+| 19| 19|
++---+---+
+only showing top 20 rows
+
+
+scala> q.explain
+== Physical Plan ==
+*(2) BroadcastHashJoin [id#452L], [id#455L], Inner, BuildRight
+:- *(2) Range (0, 50, step=1, splits=8)
++- BroadcastExchange HashedRelationBroadcastMode(List(input[0, bigint, false]))
+   +- *(1) Range (0, 50, step=1, splits=8)
+
+
+scala> spark.conf.set("spark.sql.autoBroadcastJoinThreshold",-1)
+
+scala> val q1=df1.join(df3).where($"a.id" === $"c.id")
+q1: org.apache.spark.sql.Dataset[org.apache.spark.sql.Row] = [id: bigint, id: bigint]
+
+scala> q1.show
++---+---+
+| id| id|
++---+---+
+| 26| 26|
+| 29| 29|
+| 19| 19|
+|  0|  0|
+| 22| 22|
+|  7|  7|
+| 34| 34|
+| 32| 32|
+| 43| 43|
+| 31| 31|
+| 39| 39|
+| 25| 25|
+|  6|  6|
+|  9|  9|
+| 27| 27|
+| 17| 17|
+| 41| 41|
+| 28| 28|
+| 33| 33|
+|  5|  5|
++---+---+
+only showing top 20 rows
+
+
+scala> q1.explain
+== Physical Plan ==
+*(5) SortMergeJoin [id#452L], [id#458L], Inner
+:- *(2) Sort [id#452L ASC NULLS FIRST], false, 0
+:  +- Exchange hashpartitioning(id#452L, 200)
+:     +- *(1) Range (0, 50, step=1, splits=8)
++- *(4) Sort [id#458L ASC NULLS FIRST], false, 0
+   +- ReusedExchange [id#458L], Exchange hashpartitioning(id#452L, 200)
+
+
+scala> val df4=broadcast(spark.range(50)).as("d")
+df4: org.apache.spark.sql.Dataset[Long] = [id: bigint]
+
+scala> df4.show
++---+
+| id|
++---+
+|  0|
+|  1|
+|  2|
+|  3|
+|  4|
+|  5|
+|  6|
+|  7|
+|  8|
+|  9|
+| 10|
+| 11|
+| 12|
+| 13|
+| 14|
+| 15|
+| 16|
+| 17|
+| 18|
+| 19|
++---+
+only showing top 20 rows
+
+
+scala> val data=df1.join(df4).where($"a.id" === $"d.id")
+data: org.apache.spark.sql.Dataset[org.apache.spark.sql.Row] = [id: bigint, id: bigint]
+
+scala> data.show
++---+---+
+| id| id|
++---+---+
+|  0|  0|
+|  1|  1|
+|  2|  2|
+|  3|  3|
+|  4|  4|
+|  5|  5|
+|  6|  6|
+|  7|  7|
+|  8|  8|
+|  9|  9|
+| 10| 10|
+| 11| 11|
+| 12| 12|
+| 13| 13|
+| 14| 14|
+| 15| 15|
+| 16| 16|
+| 17| 17|
+| 18| 18|
+| 19| 19|
++---+---+
+only showing top 20 rows
+
+
+scala> data.explain
+== Physical Plan ==
+*(2) BroadcastHashJoin [id#452L], [id#483L], Inner, BuildRight
+:- *(2) Range (0, 50, step=1, splits=8)
++- BroadcastExchange HashedRelationBroadcastMode(List(input[0, bigint, false]))
+   +- *(1) Range (0, 50, step=1, splits=8)
+scala> df1.createTempView("df1")
+
+scala> df4.createTempView("df4")
+
+
+scala> spark.sql("select * from df1 inner join df4 on df1.id = df4.id")
+res43: org.apache.spark.sql.DataFrame = [id: bigint, id: bigint]
+
+scala> spark.sql("select * from df1 inner join df4 on df1.id = df4.id").show
++---+---+
+| id| id|
++---+---+
+|  0|  0|
+|  1|  1|
+|  2|  2|
+|  3|  3|
+|  4|  4|
+|  5|  5|
+|  6|  6|
+|  7|  7|
+|  8|  8|
+|  9|  9|
+| 10| 10|
+| 11| 11|
+| 12| 12|
+| 13| 13|
+| 14| 14|
+| 15| 15|
+| 16| 16|
+| 17| 17|
+| 18| 18|
+| 19| 19|
++---+---+
+only showing top 20 rows
+
+
+scala> spark.sql("select * from df1 inner join df4 on df1.id = df4.id").explain
+== Physical Plan ==
+*(2) BroadcastHashJoin [id#452L], [id#483L], Inner, BuildRight
+:- *(2) Range (0, 50, step=1, splits=8)
++- BroadcastExchange HashedRelationBroadcastMode(List(input[0, bigint, false]))
+   +- *(1) Range (0, 50, step=1, splits=8)
